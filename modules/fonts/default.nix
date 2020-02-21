@@ -42,30 +42,7 @@ in
     system.activationScripts.fonts.text = optionalString cfg.enableFontDir ''
       # Set up fonts.
       echo "configuring fonts..." >&2
-      find -L "$systemConfig/Library/Fonts" -type f -print0 | while IFS= read -rd "" l; do
-          font=''${l##*/}
-          f=$(readlink -f "$l")
-          if [ ! -e "/Library/Fonts/$font" ] || [ $(stat -c '%i' "$f") != $(stat -c '%i' "/Library/Fonts/$font") ]; then
-              echo "updating font $font..." >&2
-              # FIXME: hardlink, won't work if nix is on a dedicated filesystem.
-              ln -fn "$f" /Library/Fonts
-          fi
-      done
-
-      fontrestore default -n 2>&1 | while read -r f; do
-          case $f in
-              /Library/Fonts/*)
-                  font=''${f##*/}
-                  if [ ! -e "$systemConfig/Library/Fonts/$font" ]; then
-                      echo "removing font $font..." >&2
-                      rm "/Library/Fonts/$font"
-                  fi
-                  ;;
-              /*)
-                  # ignoring unexpected fonts
-                  ;;
-          esac
-      done
+      rsync -rL --progress --delete-after --size-only "$systemConfig/Library/Fonts/" /Library/Fonts
     '';
 
   };
